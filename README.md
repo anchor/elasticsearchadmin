@@ -1,4 +1,6 @@
 elasticsearchadmin
 ==================
 
-Python toolkit for Elasticsearch cluster administration
+Python toolkit for Elasticsearch cluster administration.
+
+Originally written by Saj Goonatilleke. 
