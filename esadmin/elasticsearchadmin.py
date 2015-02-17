@@ -5,6 +5,7 @@ import httplib
 import json
 import logging
 import math
+import re
 import sys
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ class HttpError(Exception):
 class Connection(object):
     def __init__(self, host, port):
         self.conn = httplib.HTTPConnection(host, port)
+        self.es_version = None
 
     def __enter__(self):
         return self
@@ -76,7 +78,21 @@ class Connection(object):
         return state['master_node']
 
     def my_node_id(self):
-        info = self.get('/_cluster/nodes/_local')
+        # Elasticsearch 1.0.0 replaced the /_cluster/nodes endpoint
+        # with /_nodes. Check which version we're dealing with and
+        # choose the correct API.
+        if self.es_version is None:
+            # Remove everything except digits and . and - separators,
+            # turning e.g. 1.0.0-rc1 into 1.0.0-1. The subsequent split
+            # on the same separators leaves us with a list of numbers.
+            sanitized_version = re.sub(r'[^0-9.-]', '',
+                                       self.get('/')['version']['number'])
+            self.es_version = tuple(
+                int(s) for s in re.split(r'[.-]', sanitized_version))
+        if self.es_version >= (1, 0, 0):
+            info = self.get('/_nodes/_local')
+        else:
+            info = self.get('/_cluster/nodes/_local')
         return info['nodes'].keys()[0]
 
     def indices(self):
