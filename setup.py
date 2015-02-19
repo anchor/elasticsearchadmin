@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="esadmin",
-    version="1.0.0",
+    version="1.0.1",
     description="Elasticsearch administration module",
     url="https://github.com/anchor/elasticsearchadmin",
     maintainer="Sharif Olorin",
