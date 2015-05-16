@@ -164,15 +164,15 @@ class Connection(object):
         on all), "some" (yes, only on some), or "unknown".
 
         """
-        disabled = self.get_index_translog_disable_flush()
-        states = set(disabled.values())
-        if len(states) > 1 and True in states:
+        states = self.get_index_translog_disable_flush().values()
+        if not states:
+            return "unknown"
+        if all(s == True for s in states):
+            return "disabled"
+        if all(s == False for s in states):
+            return "enabled"
+        if any(s == False for s in states):
             return "some"
-        elif len(states) == 1:
-            if True in states:
-                return "disabled"
-            else:
-                return "enabled"
         return "unknown"
 
 class TabularPrinter(object):
