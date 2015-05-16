@@ -116,11 +116,18 @@ class Connection(object):
         """
         disabled = {}
         settings = self.get('/_settings')
+        setting_getters = [
+            lambda s: s['index.translog.disable_flush'],
+            lambda s: s['index']['translog']['disable_flush']]
         for idx in settings:
             idx_settings = settings[idx]['settings']
-            disabled[idx] = (booleanise(
-                             idx_settings.get('index.translog.disable_flush',
-                                              "unknown")))
+            for getter in setting_getters:
+                try:
+                    disabled[idx] = booleanise(getter(idx_settings))
+                except KeyError as e:
+                    pass
+            if not idx in disabled:
+                disabled[idx] = 'unknown'
         return disabled
 
     def allocator_disabled(self):
@@ -132,15 +139,20 @@ class Connection(object):
 
         """
         state = "unknown"
-        k = 'cluster.routing.allocation.disable_allocation'
+        setting_getters = [
+            lambda s: s['cluster.routing.allocation.disable_allocation'],
+            lambda s: s['cluster']['routing']['allocation']['disable_allocation']]
         settings = self.get('/_cluster/settings')
         for i in ['persistent', 'transient']:
-            if k in settings[i]:
-                v = booleanise(settings[i][k])
-                if v == True:
-                    state = "disabled"
-                elif v == False:
-                    state = "enabled"
+            for getter in setting_getters:
+                try:
+                    v = booleanise(getter(settings[i]))
+                    if v == True:
+                        state = "disabled"
+                    elif v == False:
+                        state = "enabled"
+                except KeyError:
+                    pass
         return state
 
     def flushing_disabled(self):
